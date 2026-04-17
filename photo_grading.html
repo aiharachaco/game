@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Photo Grading</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;
+  --surface:#1a1a1f;
+  --surface2:#25252d;
+  --accent:#c8a96e;
+  --accent2:#7b9ec8;
+  --text:#f0ece4;
+  --text2:#8a857c;
+  --radius:14px;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  max-width:480px;
+  margin:0 auto;
+  overflow-x:hidden;
+}
+header{
+  padding:16px 20px 10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+header h1{
+  font-size:1.1rem;
+  font-weight:600;
+  letter-spacing:.08em;
+  color:var(--accent);
+}
+header .dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+}
+
+/* Canvas / Preview */
+.canvas-wrap{
+  position:relative;
+  width:100%;
+  background:#000;
+  aspect-ratio:1/1;
+  overflow:hidden;
+}
+.canvas-wrap canvas{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+.placeholder{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  background:var(--surface);
+}
+.placeholder svg{
+  width:64px;height:64px;
+  opacity:.4;
+}
+.placeholder p{
+  color:var(--text2);
+  font-size:.85rem;
+  letter-spacing:.04em;
+}
+
+/* Buttons */
+.btn-row{
+  display:flex;
+  gap:10px;
+  padding:14px 16px 0;
+}
+.btn{
+  flex:1;
+  padding:12px 8px;
+  border:none;
+  border-radius:var(--radius);
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:opacity .15s,transform .1s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn:active{transform:scale(.96);opacity:.8}
+.btn-primary{background:var(--accent);color:#1a1208;}
+.btn-secondary{background:var(--surface2);color:var(--text);}
+.btn-download{background:var(--accent2);color:#0a1420;display:none;}
+.btn-download.visible{display:flex;}
+
+/* Presets */
+.section-label{
+  padding:16px 16px 8px;
+  font-size:.7rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--text2);
+  font-weight:600;
+}
+.presets{
+  display:flex;
+  gap:10px;
+  padding:0 16px 4px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.presets::-webkit-scrollbar{display:none}
+.preset{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.preset-thumb{
+  width:60px;height:60px;
+  border-radius:10px;
+  overflow:hidden;
+  border:2px solid transparent;
+  transition:border-color .15s,transform .12s;
+  background:var(--surface2);
+}
+.preset-thumb canvas{
+  width:100%;height:100%;
+  display:block;
+}
+.preset.active .preset-thumb{
+  border-color:var(--accent);
+  transform:scale(1.05);
+}
+.preset-name{
+  font-size:.62rem;
+  letter-spacing:.05em;
+  color:var(--text2);
+  transition:color .15s;
+}
+.preset.active .preset-name{color:var(--accent);}
+
+/* Sliders */
+.sliders{
+  padding:4px 16px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.slider-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.slider-label{
+  width:72px;
+  font-size:.72rem;
+  color:var(--text2);
+  letter-spacing:.04em;
+  flex-shrink:0;
+}
+.slider-val{
+  width:30px;
+  text-align:right;
+  font-size:.72rem;
+  color:var(--accent);
+  font-variant-numeric:tabular-nums;
+  flex-shrink:0;
+}
+input[type=range]{
+  flex:1;
+  -webkit-appearance:none;
+  appearance:none;
+  height:3px;
+  border-radius:3px;
+  background:var(--surface2);
+  outline:none;
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;height:18px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 6px rgba(200,169,110,.5);
+  cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:18px;height:18px;
+  border-radius:50%;
+  background:var(--accent);
+  border:none;
+  cursor:pointer;
+}
+
+/* Compare toggle */
+.compare-btn{
+  position:absolute;
+  top:10px;right:10px;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:20px;
+  padding:5px 11px;
+  font-size:.7rem;
+  letter-spacing:.06em;
+  cursor:pointer;
+  backdrop-filter:blur(6px);
+  display:none;
+}
+.compare-btn.visible{display:block}
+
+/* Bottom safe area */
+.spacer{height:env(safe-area-inset-bottom, 20px);min-height:20px;}
+
+/* Hidden inputs */
+#fileInput,#cameraInput{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="dot"></div>
+  <h1>PHOTO GRADING</h1>
+</header>
+
+<div class="canvas-wrap" id="previewWrap">
+  <canvas id="mainCanvas"></canvas>
+  <div class="placeholder" id="placeholder">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <rect x="2" y="3" width="20" height="18" rx="2"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="18" cy="6" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+    <p>写真を選んでグレーディング</p>
+  </div>
+  <button class="compare-btn" id="compareBtn">比較</button>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-secondary" id="galleryBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+      <path d="m21 15-5-5L5 21"/>
+    </svg>
+    ギャラリー
+  </button>
+  <button class="btn btn-primary" id="cameraBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+      <circle cx="12" cy="13" r="3"/>
+    </svg>
+    カメラ
+  </button>
+  <button class="btn btn-download" id="downloadBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    保存
+  </button>
+</div>
+
+<div class="section-label">プリセット</div>
+<div class="presets" id="presetsRow"></div>
+
+<div class="section-label">調整</div>
+<div class="sliders">
+  <div class="slider-row">
+    <span class="slider-label">明るさ</span>
+    <input type="range" id="s_brightness" min="-100" max="100" value="0">
+    <span class="slider-val" id="v_brightness">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">コントラスト</span>
+    <input type="range" id="s_contrast" min="-100" max="100" value="0">
+    <span class="slider-val" id="v_contrast">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">彩度</span>
+    <input type="range" id="s_saturation" min="-100" max="100" value="0">
+    <span class="slider-val" id="v_saturation">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">色温度</span>
+    <input type="range" id="s_temperature" min="-100" max="100" value="0">
+    <span class="slider-val" id="v_temperature">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">ティール</span>
+    <input type="range" id="s_teal" min="0" max="100" value="0">
+    <span class="slider-val" id="v_teal">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">フェード</span>
+    <input type="range" id="s_fade" min="0" max="100" value="0">
+    <span class="slider-val" id="v_fade">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">シャープ</span>
+    <input type="range" id="s_sharpen" min="0" max="100" value="0">
+    <span class="slider-val" id="v_sharpen">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">ビネット</span>
+    <input type="range" id="s_vignette" min="0" max="100" value="0">
+    <span class="slider-val" id="v_vignette">0</span>
+  </div>
+  <div class="slider-row">
+    <span class="slider-label">グレイン</span>
+    <input type="range" id="s_grain" min="0" max="100" value="0">
+    <span class="slider-val" id="v_grain">0</span>
+  </div>
+</div>
+
+<div class="spacer"></div>
+
+<input type="file" id="fileInput" accept="image/*">
+<input type="file" id="cameraInput" accept="image/*" capture="environment">
+
+<script>
+// ─── Presets ───────────────────────────────────────────────────────────────
+const PRESETS = [
+  {
+    name:'オリジナル',
+    params:{brightness:0,contrast:0,saturation:0,temperature:0,teal:0,fade:0,sharpen:0,vignette:0,grain:0}
+  },
+  {
+    name:'シネマ',
+    params:{brightness:-8,contrast:25,saturation:-15,temperature:-10,teal:35,fade:12,sharpen:20,vignette:40,grain:12}
+  },
+  {
+    name:'ヴィンテージ',
+    params:{brightness:5,contrast:10,saturation:-30,temperature:30,teal:0,fade:30,sharpen:0,vignette:50,grain:35}
+  },
+  {
+    name:'フィルム',
+    params:{brightness:-5,contrast:15,saturation:-10,temperature:15,teal:10,fade:20,sharpen:5,vignette:25,grain:28}
+  },
+  {
+    name:'ポートレート',
+    params:{brightness:10,contrast:15,saturation:10,temperature:20,teal:0,fade:8,sharpen:30,vignette:30,grain:5}
+  },
+  {
+    name:'クール',
+    params:{brightness:5,contrast:20,saturation:5,temperature:-40,teal:25,fade:5,sharpen:15,vignette:20,grain:8}
+  },
+  {
+    name:'ウォーム',
+    params:{brightness:8,contrast:10,saturation:20,temperature:40,teal:0,fade:10,sharpen:10,vignette:15,grain:5}
+  },
+  {
+    name:'マット',
+    params:{brightness:15,contrast:-20,saturation:-20,temperature:5,teal:15,fade:40,sharpen:0,vignette:10,grain:18}
+  },
+  {
+    name:'モノクロ',
+    params:{brightness:5,contrast:30,saturation:-100,temperature:0,teal:0,fade:0,sharpen:20,vignette:40,grain:20}
+  },
+  {
+    name:'ゴールデン',
+    params:{brightness:15,contrast:20,saturation:25,temperature:60,teal:0,fade:8,sharpen:15,vignette:35,grain:10}
+  },
+];
+
+// ─── State ──────────────────────────────────────────────────────────────────
+let originalImg = null;
+let currentParams = {...PRESETS[0].params};
+let activePreset = 0;
+let comparing = false;
+let processingId = 0;
+
+// ─── DOM ────────────────────────────────────────────────────────────────────
+const mainCanvas = document.getElementById('mainCanvas');
+const ctx = mainCanvas.getContext('2d',{willReadFrequently:true});
+const placeholder = document.getElementById('placeholder');
+const downloadBtn = document.getElementById('downloadBtn');
+const compareBtn = document.getElementById('compareBtn');
+const presetsRow = document.getElementById('presetsRow');
+
+const sliders = {};
+const sliderNames = ['brightness','contrast','saturation','temperature','teal','fade','sharpen','vignette','grain'];
+sliderNames.forEach(n=>{
+  const s = document.getElementById('s_'+n);
+  const v = document.getElementById('v_'+n);
+  sliders[n] = {el:s,valEl:v};
+  s.addEventListener('input',()=>{
+    currentParams[n] = parseInt(s.value);
+    v.textContent = s.value;
+    scheduleRender();
+  });
+});
+
+// ─── Preset thumbnails ───────────────────────────────────────────────────────
+function buildPresets(){
+  PRESETS.forEach((p,i)=>{
+    const div = document.createElement('div');
+    div.className = 'preset'+(i===0?' active':'');
+    div.dataset.index = i;
+    const thumb = document.createElement('div');
+    thumb.className = 'preset-thumb';
+    const c = document.createElement('canvas');
+    c.width=60;c.height=60;
+    thumb.appendChild(c);
+    const nm = document.createElement('div');
+    nm.className = 'preset-name';
+    nm.textContent = p.name;
+    div.appendChild(thumb);
+    div.appendChild(nm);
+    div.addEventListener('click',()=>applyPreset(i));
+    presetsRow.appendChild(div);
+  });
+}
+buildPresets();
+
+function applyPreset(i){
+  activePreset = i;
+  currentParams = {...PRESETS[i].params};
+  sliderNames.forEach(n=>{
+    sliders[n].el.value = currentParams[n];
+    sliders[n].valEl.textContent = currentParams[n];
+  });
+  document.querySelectorAll('.preset').forEach((el,j)=>{
+    el.classList.toggle('active',j===i);
+  });
+  scheduleRender();
+}
+
+function updatePresetThumbs(){
+  document.querySelectorAll('.preset-thumb canvas').forEach((c,i)=>{
+    if(!originalImg) return;
+    drawGraded(originalImg, PRESETS[i].params, c);
+  });
+}
+
+// ─── Image loading ───────────────────────────────────────────────────────────
+function loadImage(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      originalImg = img;
+      placeholder.style.display='none';
+      compareBtn.classList.add('visible');
+      downloadBtn.classList.add('visible');
+      scheduleRender();
+      updatePresetThumbs();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('galleryBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+document.getElementById('cameraBtn').addEventListener('click',()=>document.getElementById('cameraInput').click());
+document.getElementById('fileInput').addEventListener('change',e=>{ if(e.target.files[0]) loadImage(e.target.files[0]); });
+document.getElementById('cameraInput').addEventListener('change',e=>{ if(e.target.files[0]) loadImage(e.target.files[0]); });
+
+// ─── Compare ─────────────────────────────────────────────────────────────────
+compareBtn.addEventListener('pointerdown',()=>{ comparing=true; scheduleRender(); });
+compareBtn.addEventListener('pointerup',()=>{ comparing=false; scheduleRender(); });
+compareBtn.addEventListener('pointerleave',()=>{ if(comparing){comparing=false;scheduleRender();} });
+
+// ─── Download ────────────────────────────────────────────────────────────────
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+  if(!originalImg) return;
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = originalImg.naturalWidth;
+  outCanvas.height = originalImg.naturalHeight;
+  drawGraded(originalImg, currentParams, outCanvas, true);
+  setTimeout(()=>{
+    const a = document.createElement('a');
+    a.download = 'graded_'+Date.now()+'.jpg';
+    a.href = outCanvas.toDataURL('image/jpeg', 0.95);
+    a.click();
+  }, 80);
+});
+
+// ─── Render scheduling ───────────────────────────────────────────────────────
+let rafId = null;
+function scheduleRender(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(doRender);
+}
+function doRender(){
+  rafId = null;
+  if(!originalImg) return;
+  if(comparing){
+    drawGraded(originalImg, PRESETS[0].params, mainCanvas);
+  } else {
+    drawGraded(originalImg, currentParams, mainCanvas);
+  }
+}
+
+// ─── Core grading engine ─────────────────────────────────────────────────────
+function drawGraded(img, params, targetCanvas, highRes=false){
+  // Size canvas to image (square crop for preview)
+  const srcW = img.naturalWidth;
+  const srcH = img.naturalHeight;
+
+  let cw, ch, sx, sy, sw, sh;
+  if(targetCanvas === mainCanvas && !highRes){
+    const side = Math.min(srcW, srcH);
+    sx = (srcW-side)/2; sy = (srcH-side)/2; sw = side; sh = side;
+    cw = Math.min(side, 1080); ch = cw;
+  } else {
+    sx=0; sy=0; sw=srcW; sh=srcH;
+    cw=srcW; ch=srcH;
+  }
+
+  targetCanvas.width = cw;
+  targetCanvas.height = ch;
+  const tc = targetCanvas.getContext('2d',{willReadFrequently:true});
+  tc.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+
+  const imageData = tc.getImageData(0,0,cw,ch);
+  const data = imageData.data;
+
+  const {brightness,contrast,saturation,temperature,teal,fade,sharpen,vignette,grain} = params;
+
+  // Build LUT for brightness/contrast/saturation/temperature/teal/fade
+  const lut = buildLUT(brightness, contrast, saturation, temperature, teal, fade);
+
+  for(let i=0;i<data.length;i+=4){
+    let r=data[i], g=data[i+1], b=data[i+2];
+    // Apply LUT
+    r = lut.r[r]; g = lut.g[g]; b = lut.b[b];
+    // Cross-channel (teal-orange): boost orange in highlights, teal in shadows
+    if(teal > 0){
+      const t = teal/100;
+      const lum = (r*0.299+g*0.587+b*0.114)/255;
+      // shadows → teal
+      const shadow = Math.max(0, 1-lum*2);
+      // highlights → orange
+      const hilight = Math.max(0, lum*2-1);
+      r = clamp(r + (hilight*30 - shadow*15)*t);
+      g = clamp(g + (hilight*8  - shadow*5 )*t);
+      b = clamp(b - (hilight*20 - shadow*30)*t);
+    }
+    data[i]=r; data[i+1]=g; data[i+2]=b;
+  }
+
+  // Grain
+  if(grain > 0){
+    const gAmt = grain/100 * 45;
+    for(let i=0;i<data.length;i+=4){
+      const n = (Math.random()-.5)*gAmt;
+      data[i]   = clamp(data[i]   + n);
+      data[i+1] = clamp(data[i+1] + n);
+      data[i+2] = clamp(data[i+2] + n);
+    }
+  }
+
+  tc.putImageData(imageData, 0, 0);
+
+  // Sharpen (convolution - skip for thumbnails for perf)
+  if(sharpen > 0 && cw > 60){
+    applyUnsharpMask(tc, cw, ch, sharpen);
+  }
+
+  // Vignette (canvas gradient, fast)
+  if(vignette > 0){
+    const v = vignette/100;
+    const grad = tc.createRadialGradient(cw/2,ch/2, Math.min(cw,ch)*0.35,
+                                          cw/2,ch/2, Math.min(cw,ch)*0.85);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, `rgba(0,0,0,${v*0.75})`);
+    tc.fillStyle = grad;
+    tc.fillRect(0,0,cw,ch);
+  }
+}
+
+// ─── LUT builder ─────────────────────────────────────────────────────────────
+function buildLUT(brightness, contrast, saturation, temperature, teal, fade){
+  // We build per-channel lookup tables
+  const rLUT = new Uint8ClampedArray(256);
+  const gLUT = new Uint8ClampedArray(256);
+  const bLUT = new Uint8ClampedArray(256);
+
+  const bri = brightness/100; // -1..1
+  const con = contrast/100;   // -1..1
+  const sat = saturation/100; // -1..1
+  const tmp = temperature/100; // -1..1 warm/cool
+  const fd  = fade/100;
+
+  for(let i=0;i<256;i++){
+    let r=i, g=i, b=i;
+
+    // Brightness (additive)
+    r += bri*80; g += bri*80; b += bri*80;
+
+    // Contrast (S-curve around 128)
+    r = applyContrast(r, con);
+    g = applyContrast(g, con);
+    b = applyContrast(b, con);
+
+    // Saturation
+    if(sat !== 0){
+      const lum = r*0.299 + g*0.587 + b*0.114;
+      r = lum + (r-lum)*(1+sat);
+      g = lum + (g-lum)*(1+sat);
+      b = lum + (b-lum)*(1+sat);
+    }
+
+    // Temperature: warm→+R+G-B, cool→-R+B
+    if(tmp > 0){ r += tmp*40; g += tmp*15; b -= tmp*30; }
+    else        { r += tmp*25; b -= tmp*40; }
+
+    // Fade (lift blacks, compress whites)
+    if(fd > 0){
+      r = r*(1-fd*0.6) + fd*40;
+      g = g*(1-fd*0.6) + fd*40;
+      b = b*(1-fd*0.6) + fd*45;
+    }
+
+    rLUT[i] = clamp(r);
+    gLUT[i] = clamp(g);
+    bLUT[i] = clamp(b);
+  }
+  return {r:rLUT, g:gLUT, b:bLUT};
+}
+
+function applyContrast(v, con){
+  // Sigmoid-like contrast
+  if(con >= 0){
+    return 128 + (v-128)*(1 + con*1.5);
+  } else {
+    return 128 + (v-128)*(1 + con*0.8);
+  }
+}
+
+// ─── Unsharp mask ─────────────────────────────────────────────────────────────
+function applyUnsharpMask(ctx2d, w, h, amount){
+  const strength = amount/100 * 1.2;
+  const orig = ctx2d.getImageData(0,0,w,h);
+  // Create blurred version (box blur 1px radius)
+  const blur = ctx2d.getImageData(0,0,w,h);
+  boxBlur(orig.data, blur.data, w, h, 1);
+  const out = ctx2d.getImageData(0,0,w,h);
+  for(let i=0;i<orig.data.length;i+=4){
+    out.data[i]   = clamp(orig.data[i]   + (orig.data[i]  -blur.data[i]  )*strength);
+    out.data[i+1] = clamp(orig.data[i+1] + (orig.data[i+1]-blur.data[i+1])*strength);
+    out.data[i+2] = clamp(orig.data[i+2] + (orig.data[i+2]-blur.data[i+2])*strength);
+    out.data[i+3] = orig.data[i+3];
+  }
+  ctx2d.putImageData(out,0,0);
+}
+
+function boxBlur(src, dst, w, h, r){
+  const tmp = new Uint8ClampedArray(src.length);
+  // horizontal
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let sumR=0,sumG=0,sumB=0,cnt=0;
+      for(let kx=-r;kx<=r;kx++){
+        const px = Math.min(Math.max(x+kx,0),w-1);
+        const idx=(y*w+px)*4;
+        sumR+=src[idx]; sumG+=src[idx+1]; sumB+=src[idx+2]; cnt++;
+      }
+      const i=(y*w+x)*4;
+      tmp[i]=sumR/cnt; tmp[i+1]=sumG/cnt; tmp[i+2]=sumB/cnt; tmp[i+3]=src[i+3];
+    }
+  }
+  // vertical
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let sumR=0,sumG=0,sumB=0,cnt=0;
+      for(let ky=-r;ky<=r;ky++){
+        const py = Math.min(Math.max(y+ky,0),h-1);
+        const idx=(py*w+x)*4;
+        sumR+=tmp[idx]; sumG+=tmp[idx+1]; sumB+=tmp[idx+2]; cnt++;
+      }
+      const i=(y*w+x)*4;
+      dst[i]=sumR/cnt; dst[i+1]=sumG/cnt; dst[i+2]=sumB/cnt; dst[i+3]=tmp[i+3];
+    }
+  }
+}
+
+function clamp(v){ return v<0?0:v>255?255:v; }
+</script>
+</body>
+</html>
