@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タロットカード 意味辞典</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:linear-gradient(135deg,#1a0533 0%,#2d1b4e 50%,#0d0d2b 100%);
+  min-height:100vh;
+  font-family:'Hiragino Maru Gothic Pro','Yu Gothic',sans-serif;
+  color:#f0e6ff;
+}
+
+h1{
+  text-align:center;
+  font-size:1.8rem;
+  color:#e8c8ff;
+  padding:24px 16px 8px;
+  text-shadow:0 0 20px rgba(200,120,255,0.8);
+  letter-spacing:4px;
+}
+.subtitle{
+  text-align:center;
+  font-size:0.85rem;
+  color:#a080c0;
+  margin-bottom:20px;
+  letter-spacing:2px;
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:0 16px 16px;
+}
+.search-box{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(200,150,255,0.4);
+  border-radius:24px;
+  padding:10px 20px;
+  color:#f0e6ff;
+  font-size:1rem;
+  outline:none;
+  width:260px;
+  transition:border-color 0.2s;
+}
+.search-box::placeholder{color:#806090}
+.search-box:focus{border-color:rgba(200,150,255,0.8);}
+
+.filter-btn{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(200,150,255,0.3);
+  border-radius:24px;
+  padding:9px 16px;
+  color:#c0a0e0;
+  font-size:0.85rem;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.filter-btn.active,.filter-btn:hover{
+  background:rgba(160,80,220,0.35);
+  border-color:rgba(200,150,255,0.7);
+  color:#e8c8ff;
+}
+
+.section-title{
+  text-align:center;
+  font-size:1rem;
+  color:#c090e0;
+  letter-spacing:3px;
+  margin:12px 0 10px;
+  opacity:0.8;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;
+  padding:0 16px 40px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.card{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(180,120,255,0.2);
+  border-radius:16px;
+  padding:16px;
+  cursor:pointer;
+  transition:all 0.25s;
+  position:relative;
+  overflow:hidden;
+}
+.card::before{
+  content:'';
+  position:absolute;
+  top:-50%;left:-50%;
+  width:200%;height:200%;
+  background:radial-gradient(circle,rgba(180,100,255,0.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+.card:hover{
+  border-color:rgba(200,150,255,0.5);
+  background:rgba(255,255,255,0.1);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(150,80,255,0.2);
+}
+.card.open{
+  border-color:rgba(220,170,255,0.6);
+  background:rgba(160,80,255,0.1);
+}
+
+.card-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.card-number{
+  background:rgba(160,80,255,0.25);
+  border:1px solid rgba(200,150,255,0.4);
+  border-radius:10px;
+  width:42px;height:42px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;
+  color:#d0a8ff;
+  font-weight:bold;
+  flex-shrink:0;
+  letter-spacing:0;
+}
+.card-title-block{flex:1}
+.card-name{
+  font-size:1.05rem;
+  font-weight:bold;
+  color:#e8d0ff;
+  margin-bottom:2px;
+}
+.card-name-en{
+  font-size:0.75rem;
+  color:#9070b0;
+  letter-spacing:1px;
+}
+.card-symbol{
+  font-size:1.6rem;
+  flex-shrink:0;
+}
+
+.card-body{
+  display:none;
+  margin-top:14px;
+  border-top:1px solid rgba(180,120,255,0.2);
+  padding-top:12px;
+}
+.card.open .card-body{display:block}
+
+.tag-row{
+  display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;
+}
+.tag{
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:0.72rem;
+  font-weight:bold;
+  letter-spacing:0.5px;
+}
+.tag.upright{background:rgba(80,200,120,0.2);color:#80e0a0;border:1px solid rgba(80,200,120,0.3)}
+.tag.reversed{background:rgba(220,80,80,0.2);color:#e08080;border:1px solid rgba(220,80,80,0.3)}
+.tag.element{background:rgba(100,160,255,0.2);color:#a0c8ff;border:1px solid rgba(100,160,255,0.3)}
+
+.meaning-section{margin-bottom:10px}
+.meaning-label{
+  font-size:0.72rem;
+  color:#9070b0;
+  letter-spacing:1px;
+  margin-bottom:4px;
+  text-transform:uppercase;
+}
+.meaning-text{
+  font-size:0.88rem;
+  color:#d0b8f0;
+  line-height:1.7;
+}
+
+.upright-block .meaning-text{color:#c0ecd0}
+.reversed-block .meaning-text{color:#f0c0c0}
+
+.keywords{
+  display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;
+}
+.keyword{
+  background:rgba(160,100,255,0.15);
+  border:1px solid rgba(160,100,255,0.3);
+  border-radius:12px;
+  padding:2px 10px;
+  font-size:0.75rem;
+  color:#c0a0e0;
+}
+
+.no-results{
+  text-align:center;
+  color:#806090;
+  padding:40px;
+  font-size:1rem;
+  grid-column:1/-1;
+}
+</style>
+</head>
+<body>
+
+<h1>✦ タロット辞典 ✦</h1>
+<p class="subtitle">大アルカナ 22枚の意味</p>
+
+<div class="controls">
+  <input class="search-box" type="text" placeholder="🔍 カード名で検索..." id="searchInput">
+  <button class="filter-btn active" data-filter="all">すべて</button>
+  <button class="filter-btn" data-filter="major">大アルカナ</button>
+</div>
+
+<div class="grid" id="cardGrid"></div>
+
+<script>
+const CARDS = [
+  {
+    num:"0", name:"愚者", en:"The Fool", symbol:"🌟", element:"風",
+    keywords:["自由","冒険","純粋","新しい始まり","無邪気"],
+    upright:"新しい旅の始まり。純粋な心で未知の世界へ踏み出す勇気。無限の可能性と自由。直感を信じて行動する時。",
+    reversed:"無謀さ、無責任。考えなしの行動が招くトラブル。準備不足のまま進んでしまう状況。"
+  },
+  {
+    num:"I", name:"魔術師", en:"The Magician", symbol:"⚡", element:"風",
+    keywords:["意志力","技術","創造","行動","集中"],
+    upright:"強い意志と集中力で望む現実を創り出す力。持てる資源や才能をフル活用する時。目標達成の好機。",
+    reversed:"才能の無駄遣い、自信過剰。詐欺や欺きへの注意。潜在能力が活かされていない状態。"
+  },
+  {
+    num:"II", name:"女教皇", en:"The High Priestess", symbol:"🌙", element:"水",
+    keywords:["直感","神秘","内省","潜在意識","知恵"],
+    upright:"深い直感と内なる知恵に従う時。秘密や神秘が明らかになる予感。静かに答えを待つことの大切さ。",
+    reversed:"直感を無視している。隠された真実が明かされない状態。内面の声を聞けていない。"
+  },
+  {
+    num:"III", name:"女帝", en:"The Empress", symbol:"🌸", element:"地",
+    keywords:["豊かさ","創造","母性","自然","美"],
+    upright:"豊かさと繁栄。母性的な愛情と創造力。自然との調和。妊娠や出産、芸術活動の開花。",
+    reversed:"創造性の停滞、過保護。物質的な不足や依存関係。自然からの断絶。"
+  },
+  {
+    num:"IV", name:"皇帝", en:"The Emperor", symbol:"👑", element:"火",
+    keywords:["権威","秩序","安定","父性","リーダーシップ"],
+    upright:"強いリーダーシップと権威。安定した基盤と秩序の構築。目標に向かって着実に進む力。",
+    reversed:"支配欲、権威主義。柔軟性の欠如。父性的な抑圧や支配関係。"
+  },
+  {
+    num:"V", name:"教皇", en:"The Hierophant", symbol:"⛪", element:"地",
+    keywords:["伝統","信仰","教え","慣習","精神的指導"],
+    upright:"伝統と慣習に従う知恵。精神的な教えや指導者との出会い。社会的なルールの中での成長。",
+    reversed:"伝統への反発、型破りな行動。制度への不満。精神的な自由を求める気持ち。"
+  },
+  {
+    num:"VI", name:"恋人たち", en:"The Lovers", symbol:"💞", element:"風",
+    keywords:["愛","選択","調和","価値観","結合"],
+    upright:"大切な選択と決断の時。深い愛情と調和ある関係。自分の価値観に基づいた選択が人生を変える。",
+    reversed:"関係の不調和、間違った選択。価値観の不一致。誘惑に負けてしまう状況。"
+  },
+  {
+    num:"VII", name:"戦車", en:"The Chariot", symbol:"🏆", element:"水",
+    keywords:["意志","勝利","前進","自制","征服"],
+    upright:"強い意志力と自制心で障害を乗り越える。勝利と成功。目標に向かって突き進む勢いと集中力。",
+    reversed:"方向性の喪失、意志の弱さ。コントロールを失う。攻撃的または無謀な行動。"
+  },
+  {
+    num:"VIII", name:"力", en:"Strength", symbol:"🦁", element:"火",
+    keywords:["勇気","忍耐","内なる力","温和","克服"],
+    upright:"柔らかな強さと内なる勇気。温和さで困難を乗り越える力。野性的な衝動を制御する知恵。",
+    reversed:"自信の欠如、弱さ。内なる恐怖に支配される。力の乱用や自己制御の失敗。"
+  },
+  {
+    num:"IX", name:"隠者", en:"The Hermit", symbol:"🕯️", element:"地",
+    keywords:["内省","孤独","探求","知恵","精神的成長"],
+    upright:"内省と孤独の中に真理を見出す時。精神的な探求と深い洞察。内なる光で自らの道を照らす。",
+    reversed:"孤立、孤独感。社会からの引きこもり。内省が過ぎて前進できない状態。"
+  },
+  {
+    num:"X", name:"運命の輪", en:"Wheel of Fortune", symbol:"🎡", element:"火",
+    keywords:["運命","変化","サイクル","好機","流れ"],
+    upright:"運命の転換点。良い変化と好機の到来。宇宙の流れに乗り、運の波に乗る時。",
+    reversed:"悪運、変化への抵抗。運の悪い時期。過去のパターンを繰り返している状態。"
+  },
+  {
+    num:"XI", name:"正義", en:"Justice", symbol:"⚖️", element:"風",
+    keywords:["正義","均衡","真実","因果","法則"],
+    upright:"公正さと真実。行動の結果が正しく返ってくる時。バランスのとれた判断と責任。",
+    reversed:"不公正、不均衡。責任逃れや誠実さの欠如。偏った判断や法的トラブル。"
+  },
+  {
+    num:"XII", name:"吊るされた男", en:"The Hanged Man", symbol:"🌀", element:"水",
+    keywords:["犠牲","待機","視点の転換","手放す","悟り"],
+    upright:"自発的な犠牲と待機の時。違う角度から物事を見ることで得られる新たな洞察。手放すことの大切さ。",
+    reversed:"無駄な犠牲、先延ばし。変化への抵抗。無意味な自己犠牲や精神的な停滞。"
+  },
+  {
+    num:"XIII", name:"死神", en:"Death", symbol:"🌑", element:"水",
+    keywords:["終わり","変容","転換","手放す","再生"],
+    upright:"終わりと始まり。古いものを手放し新しいステージへ。劇的な変容と本質的な変化の時。",
+    reversed:"変化への抵抗、停滞。過去への執着。必要な終わりを受け入れられない状態。"
+  },
+  {
+    num:"XIV", name:"節制", en:"Temperance", symbol:"✨", element:"火",
+    keywords:["調和","バランス","節度","忍耐","癒し"],
+    upright:"内なるバランスと調和。対立するものを統合する力。忍耐強く目標に向かって進む。",
+    reversed:"過剰さ、不均衡。極端な行動や自己制御の欠如。焦りや不調和な状態。"
+  },
+  {
+    num:"XV", name:"悪魔", en:"The Devil", symbol:"🔗", element:"地",
+    keywords:["束縛","執着","物質主義","影","依存"],
+    upright:"自ら作り出した束縛と執着。物質的な欲望や依存関係。影の部分を認識する必要性。",
+    reversed:"解放、束縛からの脱出。悪習慣の克服。依存関係を断ち切る力。"
+  },
+  {
+    num:"XVI", name:"塔", en:"The Tower", symbol:"⚡", element:"火",
+    keywords:["崩壊","変革","覚醒","突然の変化","解放"],
+    upright:"突然の崩壊と破壊。しかしその先にある解放と真実。偽りの構造が崩れ落ちる瞬間。",
+    reversed:"変化への抵抗、崩壊の回避。内なる変革が緩やかに進む。危機的状況の軽減。"
+  },
+  {
+    num:"XVII", name:"星", en:"The Star", symbol:"⭐", element:"風",
+    keywords:["希望","インスピレーション","癒し","信頼","未来"],
+    upright:"希望と再生の光。試練の後に訪れる癒しと平和。宇宙からのギフトと豊かな未来への信頼。",
+    reversed:"希望の喪失、悲観主義。自己不信と失望感。インスピレーションの枯渇。"
+  },
+  {
+    num:"XVIII", name:"月", en:"The Moon", symbol:"🌕", element:"水",
+    keywords:["幻想","潜在意識","直感","不安","神秘"],
+    upright:"幻想と現実の境界。潜在意識の深みからのメッセージ。直感を信頼する必要性と不安の克服。",
+    reversed:"恐怖の解消、混乱の終息。隠れていた真実が明らかに。幻想から覚める時。"
+  },
+  {
+    num:"XIX", name:"太陽", en:"The Sun", symbol:"☀️", element:"火",
+    keywords:["喜び","成功","活力","明晰さ","達成"],
+    upright:"喜びと成功、生命の輝き。明るい未来と子供のような純粋な喜び。あらゆる努力が報われる時。",
+    reversed:"幸福感の陰り、自己中心的な行動。一時的な障害や過信による失敗。"
+  },
+  {
+    num:"XX", name:"審判", en:"Judgement", symbol:"🎺", element:"火",
+    keywords:["覚醒","再生","呼びかけ","許し","新章"],
+    upright:"高次元からの呼びかけと覚醒。過去の清算と許し。魂レベルでの再生と新たな人生の幕開け。",
+    reversed:"自己批判、過去への執着。使命の先延ばし。内なる声を無視している状態。"
+  },
+  {
+    num:"XXI", name:"世界", en:"The World", symbol:"🌍", element:"地",
+    keywords:["完成","達成","統合","充足","円環"],
+    upright:"完璧な完成と統合。全てのサイクルの円満な終結。宇宙との一体感と深い充足感。新たな扉。",
+    reversed:"未完成、目標の未達成。ゴールを目前に立ち止まる。統合できていない部分が残る。"
+  }
+];
+
+let openCard = null;
+let currentFilter = "all";
+let searchQuery = "";
+
+function render() {
+  const grid = document.getElementById("cardGrid");
+  const q = searchQuery.toLowerCase();
+  const filtered = CARDS.filter(c => {
+    const matchSearch = !q ||
+      c.name.includes(q) ||
+      c.en.toLowerCase().includes(q) ||
+      c.keywords.some(k => k.includes(q));
+    return matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="no-results">「' + searchQuery + '」に一致するカードが見つかりませんでした</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map((c, i) => `
+    <div class="card${openCard === c.num ? ' open' : ''}" onclick="toggleCard('${c.num}')" data-num="${c.num}">
+      <div class="card-header">
+        <div class="card-number">${c.num}</div>
+        <div class="card-title-block">
+          <div class="card-name">${c.name}</div>
+          <div class="card-name-en">${c.en}</div>
+        </div>
+        <div class="card-symbol">${c.symbol}</div>
+      </div>
+      <div class="card-body">
+        <div class="tag-row">
+          <span class="tag element">元素: ${c.element}</span>
+        </div>
+        <div class="meaning-section upright-block">
+          <div class="meaning-label">▲ 正位置</div>
+          <div class="meaning-text">${c.upright}</div>
+        </div>
+        <div class="meaning-section reversed-block">
+          <div class="meaning-label">▼ 逆位置</div>
+          <div class="meaning-text">${c.reversed}</div>
+        </div>
+        <div class="keywords">
+          ${c.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleCard(num) {
+  openCard = openCard === num ? null : num;
+  render();
+}
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchQuery = e.target.value;
+  openCard = null;
+  render();
+});
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
